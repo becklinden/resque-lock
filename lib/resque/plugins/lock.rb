@@ -52,16 +52,15 @@ module Resque
         Resque.redis.setnx(lock(*args), true)
       end
 
-      def around_perform_lock(*args)
-        begin
-          yield
-        ensure
-          # Always clear the lock when we're done, even if there is an
-          # error.
-          Resque.redis.del(lock(*args))
-        end
+      def after_perform_lock(*args)
+        # Clear the lock when we're done.
+        Resque.redis.del(lock(*args))
+      end
+
+      def on_failure_lock(error, *args)
+        # Clear the lock on an error.
+        Resque.redis.del(lock(*args))
       end
     end
   end
 end
-

@@ -37,4 +37,21 @@ class LockTest < Test::Unit::TestCase
 
     assert_equal 1, Resque.redis.llen('queue:lock_test')
   end
+
+  def test_before_enqueue_hook
+    Job.before_enqueue_lock
+    assert Resque.redis.exists(Job.lock)
+  end
+
+  def test_after_perform_hook
+    Job.before_enqueue_lock
+    Job.after_perform_lock
+    assert !Resque.redis.exists(Job.lock)
+  end
+
+  def test_on_failure_hook
+    Job.before_enqueue_lock
+    Job.on_failure_lock(RuntimeError.new)
+    assert !Resque.redis.exists(Job.lock)
+  end
 end
